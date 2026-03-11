@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atherion – Wisdom Quiz</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- React + Babel (no build step needed) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; }
+    body { font-family: 'Roboto Slab', serif; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(200,168,74,0.1); }
+    ::-webkit-scrollbar-thumb { background: #c8a84a; border-radius: 3px; }
+
+    /* ── LAYOUT ── */
+    .app { position: relative; width: 100%; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    .bg-cover { position: fixed; inset: 0; z-index: 0; }
+    .bg-cover img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .screen { position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
+
+    /* ── PARCHMENT ── */
+    .parchment { background: linear-gradient(160deg, #f5e8c0 0%, #ead9a0 100%); border: 3px solid #c8a84a; box-shadow: 3px 5px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,200,0.4); border-radius: 2px; }
+
+    /* ── BUTTONS ── */
+    .btn { cursor: pointer; font-family: 'Roboto Slab', serif; transition: transform 0.15s; border: none; outline: none; }
+    .btn:hover:not(:disabled) { transform: scale(1.04); }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn-primary { background: linear-gradient(180deg, #3a6b2a 0%, #2a5020 100%); border: 2px solid #1e3d16 !important; border-radius: 999px; color: #e8f5e0; box-shadow: 0 3px 10px rgba(0,0,0,0.4); padding: 10px 32px; font-size: 1.05rem; }
+    .btn-secondary { background: linear-gradient(180deg, #f5e8c0 0%, #ead9a0 100%); border: 2px solid #c8a84a !important; border-radius: 999px; color: #4a3a1a; box-shadow: 0 3px 10px rgba(0,0,0,0.22); padding: 10px 20px; font-size: 1rem; }
+    .btn-nav { background: linear-gradient(180deg, #f5e8c0 0%, #ead9a0 100%); border: 2px solid #c8a84a !important; color: #4a3a1a; border-radius: 4px; box-shadow: 1px 2px 6px rgba(0,0,0,0.3); padding: 6px 16px; font-size: 0.88rem; }
+
+    /* ── OPTION BUTTONS ── */
+    .option { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #c5b49a; border-radius: 2px; background: linear-gradient(160deg, #f5e8c0 0%, #ead9a0 100%); box-shadow: 1px 3px 8px rgba(0,0,0,0.22); cursor: pointer; width: 100%; text-align: left; font-family: 'Roboto Slab', serif; font-size: 1rem; color: #2e2010; transition: transform 0.12s; }
+    .option:hover { transform: scale(1.01); }
+    .option.correct { background: linear-gradient(160deg, #d4edcc 0%, #b8ddb0 100%); border-color: #4a8a3a !important; }
+    .option.wrong   { background: linear-gradient(160deg, #f0d0d0 0%, #e0b0b0 100%); border-color: #8b3a3a !important; }
+    .option.dim     { opacity: 0.5; cursor: default; }
+
+    /* ── PROGRESS DOTS ── */
+    .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #8a7040; background: transparent; transition: background 0.2s; }
+
+    /* ── TRANSITIONS ── */
+    .fade-in { animation: fadeUp 0.25s ease forwards; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── SCROLL BANNER ── */
+    .scroll-banner { position: relative; background: linear-gradient(180deg, #f0dfa8 0%, #e8cd88 50%, #f0dfa8 100%); border-top: 3px solid #b8963a; border-bottom: 3px solid #b8963a; box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,200,0.5); min-width: 300px; padding: 18px 56px 14px; }
+    .scroll-curl-l { position: absolute; left: 0; top: 0; bottom: 0; width: 20px; background: linear-gradient(90deg, #c9a94a, #e8cd88); border-right: 2px solid #b8963a; }
+    .scroll-curl-r { position: absolute; right: 0; top: 0; bottom: 0; width: 20px; background: linear-gradient(270deg, #c9a94a, #e8cd88); border-left: 2px solid #b8963a; }
+
+    /* ── CARD SCENE ── */
+    .scene-card { display: flex; flex-direction: column; overflow: hidden; background: linear-gradient(180deg,#f5e8c0,#ead9a0); border: 3px solid #c8a84a; box-shadow: 2px 4px 14px rgba(0,0,0,0.35); width: 185px; }
+    .scene-card img { width: 100%; height: 128px; object-fit: cover; display: block; }
+    .scene-card-label { padding: 6px 8px; text-align: center; border-top: 2px solid #c8a84a; font-size: 0.8rem; color: #4a3a1a; }
+
+    /* ── PRIZE ── */
+    .prize-box { display:flex; flex-direction:column; align-items:center; gap:8px; padding: 20px 24px; background: linear-gradient(160deg,#fdf3d0,#f5e090); border: 3px solid #c8a84a; box-shadow: inset 0 1px 0 rgba(255,255,200,0.5), 2px 3px 10px rgba(0,0,0,0.2); border-radius:2px; }
+    .prize-code { font-size:2rem; letter-spacing:0.35em; color:#3a1a00; font-weight:700; text-shadow:1px 1px 0 rgba(200,168,74,0.5); background:rgba(255,255,255,0.5); border:2px dashed #c8a84a; padding:6px 24px; border-radius:2px; user-select:all; }
+
+    /* ── MISC ── */
+    .center { display: flex; flex-direction: column; align-items: center; }
+    .overflow-y { overflow-y: auto; max-height: 210px; }
+    .review-item { display:flex;align-items:flex-start;gap:8px;padding:6px 12px;border-radius:2px;font-size:0.88rem;color:#2e2010; }
+    .progress-bar-track { height:8px;border-radius:999px;background:rgba(200,168,74,0.3);border:1px solid #c8a84a;overflow:hidden; }
+    .progress-bar-fill  { height:100%;background:#c8a84a;border-radius:999px;transition:width 0.3s; }
+    .feedback { padding:10px 16px;font-size:0.9rem;border-radius:2px;box-shadow:1px 2px 6px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ═══════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════ */
+const QUESTIONS = [
+  { id:1,  q:"When someone is upset, what is wiser?",                        opts:["Pause and think first","React right away"],                    ans:0 },
+  { id:2,  q:"A wise person grows by:",                                       opts:["Repeating the same mistakes","Learning from past mistakes"],    ans:1 },
+  { id:3,  q:"When someone gives advice, wisdom means:",                      opts:["Ignoring it completely","Considering it carefully"],            ans:1 },
+  { id:4,  q:"If a person has hurt someone, the wiser choice is to:",        opts:["Admit their wrong and try to do better","Avoid responsibility"], ans:0 },
+  { id:5,  q:"True wisdom is shown when someone chooses:",                    opts:["Humility","Pride"],                                             ans:0 },
+  { id:6,  q:"When judging a situation, a wise person should be guided by:", opts:["Emotion alone","Fairness and understanding"],                   ans:1 },
+  { id:7,  q:"A strong leader should care more about:",                       opts:["Personal power","The good of the people"],                     ans:1 },
+  { id:8,  q:"In a time of conflict, wisdom is shown through:",              opts:["Calm and careful judgment","Anger and impulse"],                 ans:0 },
+  { id:9,  q:"A wise person earns trust by:",                                opts:["Demanding belief","Proving themselves through actions"],        ans:1 },
+  { id:10, q:"Someone is truly worthy of responsibility when they:",          opts:["Choose wisely","Speak boldly"],                                 ans:0 },
+];
+
+/* ═══════════════════════════════════════════
+   SMALL COMPONENTS
+═══════════════════════════════════════════ */
+function OptionIcon({ index, color }) {
+  const c = color || "#6b563a";
+  if (index % 2 === 0)
+    return <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,2 14,13 2,13" fill="none" stroke={c} strokeWidth="1.8" strokeLinejoin="round"/></svg>;
+  return <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" fill="none" stroke={c} strokeWidth="1.8" strokeLinejoin="round"/></svg>;
+}
+
+function Star() {
+  return <svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,1 11,7 17,7 12,11 14,17 9,13 4,17 6,11 1,7 7,7" fill="#c8a84a" opacity="0.9"/></svg>;
+}
+
+function LaurelSVG() {
+  return (
+    <svg style={{position:"absolute",top:-10,width:340,opacity:0.9}} viewBox="0 0 340 40" fill="none">
+      <g fill="#4a6741">
+        {[0,1,2,3,4,5].map(i=>(
+          <ellipse key={"l"+i} cx={30+i*22} cy={20-Math.sin(i*0.6)*8} rx="10" ry="5"
+            transform={`rotate(${-30+i*10} ${30+i*22} ${20-Math.sin(i*0.6)*8})`} opacity="0.85"/>
+        ))}
+        {[0,1,2,3,4,5].map(i=>(
+          <ellipse key={"r"+i} cx={310-i*22} cy={20-Math.sin(i*0.6)*8} rx="10" ry="5"
+            transform={`rotate(${30-i*10} ${310-i*22} ${20-Math.sin(i*0.6)*8})`} opacity="0.85"/>
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   QUIZ GAME
+═══════════════════════════════════════════ */
+function QuizGame() {
+  const [screen, setScreen]     = useState("start");
+  const [currentQ, setCurrentQ] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [score, setScore]       = useState(0);
+  const [answers, setAnswers]   = useState(Array(QUESTIONS.length).fill(null));
+  const [animKey, setAnimKey]   = useState(0);
+
+  const q     = QUESTIONS[currentQ];
+  const total = QUESTIONS.length;
+
+  const handleSelect = (idx) => {
+    if (selected !== null) return;
+    setSelected(idx);
+    const a = [...answers]; a[currentQ] = idx; setAnswers(a);
+    if (idx === q.ans) setScore(s => s + 1);
+  };
+
+  const go = (dir) => {
+    const next = currentQ + dir;
+    setAnimKey(k => k + 1);
+    setTimeout(() => { setCurrentQ(next); setSelected(answers[next] ?? null); }, 140);
+  };
+
+  const handleNext = () => { if (currentQ < total-1) go(1); else setScreen("result"); };
+  const handleBack = () => { if (currentQ > 0) go(-1); };
+
+  const restart = () => {
+    setCurrentQ(0); setSelected(null); setScore(0);
+    setAnswers(Array(total).fill(null)); setScreen("start");
+  };
+
+  const getState = (idx) => {
+    if (selected === null) return "default";
+    if (idx === q.ans) return "correct";
+    if (idx === selected) return "wrong";
+    return "dim";
+  };
+
+  const scoreMsg = () => {
+    const p = score/total;
+    if (p===1)  return "Perfect! A true philosopher!";
+    if (p>=0.8) return "Excellent! The gods are pleased!";
+    if (p>=0.6) return "Well done, young scholar!";
+    if (p>=0.4) return "Keep studying the ancient texts!";
+    return "Return to the agora and listen more!";
+  };
+
+  /* ── START ── */
+  if (screen === "start") return (
+    <div className="screen center" style={{padding:"32px 16px 48px",justifyContent:"center"}}>
+      <div className="center" style={{position:"relative",marginBottom:12}}>
+        <LaurelSVG/>
+        <div className="scroll-banner" style={{marginTop:8}}>
+          <div className="scroll-curl-l"/><div className="scroll-curl-r"/>
+          <h1 style={{fontSize:"clamp(2.2rem,7vw,3.4rem)",color:"#5a1a0a",fontWeight:700,letterSpacing:"0.12em",textAlign:"center",position:"relative",zIndex:1}}>
+            Atherion
+          </h1>
+        </div>
+      </div>
+      <p style={{color:"#3a2e1a",fontSize:"1.1rem",fontStyle:"italic",marginBottom:32,textShadow:"0 1px 3px rgba(255,255,200,0.9)",textAlign:"center"}}>
+        A challenge of wisdom
+      </p>
+      <button className="btn btn-primary" onClick={()=>setScreen("playing")}>
+        Begin the Journey
+      </button>
+    </div>
+  );
+
+  /* ── PLAYING ── */
+  if (screen === "playing") return (
+    <div className="screen" style={{display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px"}}>
+        <button className="btn btn-nav" onClick={restart}>← Menu</button>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {QUESTIONS.map((_,i)=>(
+            <div key={i} className="dot" style={{
+              backgroundColor: answers[i]!==null
+                ? answers[i]===QUESTIONS[i].ans ? "#3a6b2a" : "#8b2222"
+                : i===currentQ ? "#c8a84a" : "transparent"
+            }}/>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button className="btn btn-nav" onClick={handleBack} disabled={currentQ===0}>‹ Back</button>
+          <button className="btn btn-nav" onClick={handleNext} disabled={selected===null}
+            style={selected!==null?{background:"linear-gradient(180deg,#3a6b2a,#2a5020)",color:"#e8f5e0"}:{}}>
+            {currentQ<total-1?"Next ›":"Results ›"}
+          </button>
+        </div>
+      </div>
+
+      <div key={animKey} className="fade-in" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+        <div style={{width:"100%",maxWidth:520,display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:"0.82rem",padding:"2px 10px",background:"linear-gradient(180deg,#f5e8c0,#ead9a0)",border:"2px solid #c8a84a",color:"#4a3a1a",borderRadius:4,whiteSpace:"nowrap",boxShadow:"1px 2px 4px rgba(0,0,0,0.2)"}}>
+              Question {currentQ+1} / {total}
+            </span>
+            <div className="progress-bar-track" style={{flex:1}}>
+              <div className="progress-bar-fill" style={{width:`${((currentQ+1)/total)*100}%`}}/>
+            </div>
+          </div>
+
+          <div className="parchment" style={{padding:"20px 24px"}}>
+            <p style={{fontSize:"1.18rem",color:"#2e2010",lineHeight:1.55}}>{q.q}</p>
+          </div>
+
+          {q.opts.map((opt,idx)=>{
+            const st = getState(idx);
+            return (
+              <button key={idx} className={"btn option "+st} onClick={()=>handleSelect(idx)}>
+                <OptionIcon index={idx} color={st==="correct"?"#2d6a2d":st==="wrong"?"#8b2222":st==="dim"?"#b0a090":"#6b563a"}/>
+                <span style={{color:st==="dim"?"#9a8a6a":"#2e2010"}}>{opt}</span>
+                {st==="correct"&&<span style={{marginLeft:"auto",color:"#2d6a2d"}}>✓</span>}
+                {st==="wrong"  &&<span style={{marginLeft:"auto",color:"#8b2222"}}>✗</span>}
+              </button>
+            );
+          })}
+
+          {selected!==null&&(
+            <div className="feedback" style={{
+              background: selected===q.ans?"linear-gradient(160deg,#d4edcc,#b8ddb0)":"linear-gradient(160deg,#f0d0d0,#e0b0b0)",
+              border:`2px solid ${selected===q.ans?"#4a8a3a":"#8b3a3a"}`,
+              color: selected===q.ans?"#1e4a1e":"#5a1a1a",
+            }}>
+              {selected===q.ans
+                ?"✓ Well answered, scholar! The gods smile upon you."
+                :`✗ The correct answer was: ${q.opts[q.ans]}`}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── RESULT ── */
+  return (
+    <div className="screen" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 16px"}}>
+      <div className="parchment" style={{width:"100%",maxWidth:520,display:"flex",flexDirection:"column",gap:18,padding:"32px"}}>
+        <div style={{textAlign:"center"}}>
+          <h2 style={{fontSize:"2rem",color:"#5a1a0a",letterSpacing:"0.1em"}}>Quest Complete!</h2>
+          <p style={{color:"#6a5030",fontSize:"1rem",marginTop:4}}>{scoreMsg()}</p>
+        </div>
+
+        <div style={{textAlign:"center",padding:"14px",border:"2px dashed #c8a84a"}}>
+          <span style={{fontSize:"3.2rem",color:"#2e2010",fontWeight:700}}>{score}</span>
+          <span style={{fontSize:"1.6rem",color:"#8a7040"}}> / {total}</span>
+          <div style={{color:"#6a5030",fontSize:"0.88rem",marginTop:2}}>{Math.round((score/total)*100)}% correct</div>
+        </div>
+
+        <div className="progress-bar-track">
+          <div className="progress-bar-fill" style={{width:`${(score/total)*100}%`,background:"linear-gradient(90deg,#3a6b2a,#4a8a3a)"}}/>
+        </div>
+
+        <div className="overflow-y" style={{display:"flex",flexDirection:"column",gap:6}}>
+          {QUESTIONS.map((qu,i)=>(
+            <div key={qu.id} className="review-item" style={{
+              border:`2px solid ${answers[i]===qu.ans?"#4a8a3a":"#c8a84a"}`,
+              background: answers[i]===qu.ans?"rgba(180,220,160,0.4)":"rgba(245,232,192,0.6)",
+            }}>
+              <span style={{color:answers[i]===qu.ans?"#2d6a2d":"#8b2222",flexShrink:0}}>{answers[i]===qu.ans?"✓":"✗"}</span>
+              <span style={{flex:1,lineHeight:1.4}}>{qu.q}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="prize-box">
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <Star/>
+            <span style={{color:"#5a3a0a",fontSize:"0.72rem",letterSpacing:"0.2em",textTransform:"uppercase"}}>Your Prize Code</span>
+            <Star/>
+          </div>
+          <div className="prize-code">WISE·2025</div>
+          <p style={{color:"#6a4a1a",fontSize:"0.76rem",textAlign:"center",letterSpacing:"0.05em"}}>
+            Present this code to your teacher to claim your reward
+          </p>
+        </div>
+
+        <div style={{display:"flex",gap:12}}>
+          <button className="btn btn-secondary" onClick={restart}>Play Again</button>
+          <button className="btn btn-primary" style={{flex:1}}>Move On →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   APP ROOT
+═══════════════════════════════════════════ */
+function App() {
+  const bg = "https://images.unsplash.com/photo-1539650116574-75c0c6d73c6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1920";
+  return (
+    <div className="app" style={{fontFamily:"'Roboto Slab',serif"}}>
+      <div className="bg-cover">
+        <img src={bg} alt="ancient greek temple background"/>
+      </div>
+      <QuizGame/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
