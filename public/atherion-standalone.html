@@ -25,9 +25,9 @@
     ::-webkit-scrollbar-thumb { background: #c8a84a; border-radius: 3px; }
 
     /* ── LAYOUT ── */
-    .app { position: relative; width: 100%; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    .app { position: relative; width: 100%; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: linear-gradient(135deg, #8B7355 0%, #A0956B 50%, #8B7355 100%); }
     .bg-cover { position: fixed; inset: 0; z-index: 0; }
-    .bg-cover img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .bg-cover img { width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0.8; }
     .screen { position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; }
 
     /* ── PARCHMENT ── */
@@ -332,7 +332,7 @@ function QuizGame() {
    APP ROOT
 ═══════════════════════════════════════════ */
 function App() {
-  const bg = "https://images.unsplash.com/photo-1539650116574-75c0c6d73c6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1920";
+  const bg = "../background.jpg";
   return (
     <div className="app" style={{fontFamily:"'Roboto Slab',serif"}}>
       <div className="bg-cover">
